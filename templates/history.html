@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="card">
+  <h2>履歴</h2>
+  <div class="small">使用回数：{{ used }}/{{ limit if limit is not none else "∞" }}</div>
+  <table class="table">
+    <tr>
+      <th>日時</th>
+      <th>ラベル</th>
+      <th>市場価格平均</th>
+      <th>総合</th>
+      <th>ランク</th>
+    </tr>
+    {% for it in items %}
+    <tr>
+      <td>{{ it.created_at }}</td>
+      <td>
+        <a href="{{ url_for('view_evaluation', eval_id=it.id) }}">
+          {{ it.horse_label }}
+        </a>
+      </td>
+      <td>
+        {# v1.5.7fix: store in "market_price_avg_man" (万円). Fallback to legacy key if present. #}
+        {% set mp = it.market_price_avg_man if it.market_price_avg_man is not none else it.market_price_avg %}
+        {% if mp %}
+          {{ "{:,}".format(mp|int) }} 万円
+        {% else %}
+          —
+        {% endif %}
+      </td>
+      <td>{{ it.total }}</td>
+      <td>{{ it.rank }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

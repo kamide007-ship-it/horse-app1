@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ title or "Go Paddock | Horse Growth & Video Analyzer" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v={{ APP_VERSION }}">
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="brand">
+        <div class="title">🐎 Go Paddock | Growth & Video Analyzer</div>
+        <div class="sub">{{ APP_VERSION }}</div>
+      </div>
+      <div class="right">
+        {% if current_user.is_authenticated %}
+          <span class="badge">Plan: {{ current_user.plan }}</span>
+          <a class="btn" href="{{ url_for('history') }}">履歴</a>
+          <a class="btn" href="{{ url_for('pricing') }}">プラン</a>
+          <a class="btn" href="{{ url_for('auth_logout') }}">ログアウト</a>
+        {% else %}
+          <a class="btn" href="{{ url_for('auth_login') }}">ログイン</a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="card">
+          {% for m in messages %}<div>⚠️ {{ m }}</div>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block body %}{% endblock %}
+    <div class="small" style="margin-top:18px;opacity:.8;">© Equine Vet Synapse / Go Paddock</div>
+  </div>
+</body>
+</html>

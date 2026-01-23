@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="card">
+  <h2>入力</h2>
+  <div class="small">測尺・距離・側面写真・動画が揃うほど<strong>確信度</strong>が上がります。</div>
+  <form method="post" enctype="multipart/form-data">
+    <div class="grid">
+      <div>
+        <label>父</label><input name="sire" required>
+        <label>母</label><input name="dam" required>
+        <label>母父</label><input name="damsire">
+        <label>生年月日</label><input name="dob" placeholder="YYYY-MM-DD">
+        <label>性別</label>
+        <select name="sex">
+          <option value="牡">牡</option><option value="牝">牝</option><option value="せん">せん</option>
+        </select>
+        <label>毛色</label>
+        <select name="coat">
+          <option value="鹿毛">鹿毛</option><option value="栗毛">栗毛</option><option value="黒鹿毛">黒鹿毛</option>
+          <option value="芦毛">芦毛</option><option value="青毛">青毛</option><option value="その他">その他</option>
+        </select>
+        <label>毛色（その他）</label><input name="coat_other" placeholder="例：青鹿毛 など">
+      </div>
+      <div>
+        <label>馬体重(kg)</label><input name="body_weight" placeholder="例: 450">
+        <label>体高(cm)</label><input name="height" placeholder="例: 155">
+        <label>胸囲(cm)</label><input name="girth" placeholder="例: 175">
+        <label>管囲(cm)</label><input name="cannon" placeholder="例: 19.5">
+        <label>撮影時年齢（画像生成の段階）</label>
+        <div class="radio">
+          <label><input type="radio" name="age_stage" value="0"> 当歳</label>
+          <label><input type="radio" name="age_stage" value="1" checked> 1歳</label>
+          <label><input type="radio" name="age_stage" value="2"> 2歳</label>
+        </div>
+        <div class="small">※デフォルトは1歳。必要に応じて当歳/2歳へ切替してください。</div>
+
+        <label>想定距離(m)</label><input name="distance_m" placeholder="例: 1600">
+        <label>メモ</label><textarea name="notes" placeholder="歩様・気性・脚元など"></textarea>
+
+        <div class="hr"></div>
+        <div class="small">血統/実績のURL貼付（v1.5.6: 数値入力が最も安定 / v2.0で自動抽出予定）</div>
+        <label>ブラックタイプ数（数値 or URL）</label><input name="blacktype_count" placeholder="例: 3  /  https://...">
+        <label>近親GSW数（数値 or URL）</label><input name="nearby_gsw" placeholder="例: 1  /  https://...">
+      </div>
+    </div>
+
+    <div class="hr"></div>
+    <div class="grid">
+      <div>
+        <label>側面写真</label><input type="file" name="side_photo" accept="image/*">
+      </div>
+      <div>
+        <label>動画</label><input type="file" name="video" accept="video/*">
+      </div>
+    </div>
+
+    <div style="margin-top:14px;">
+      <button class="btn primary" type="submit">▶︎ 解析する</button>
+    </div>
+  
+<div class="card">
+  <h3>市場価格（任意）</h3>
+  <label>市場価格平均値（万円）</label>
+  <input type="number" name="market_price_avg_man" placeholder="例：2500" min="0" step="1">
+  <small>※ 未入力の場合は評価に反映しません（「円」入力でも自動で万円へ補正します）</small>
+</div>
+</form>
+
+</div>
+{% endblock %}

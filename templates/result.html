@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="card">
+  <h2>結果：{{ label }}</h2>
+
+  <div class="kpi">
+    <div class="box">
+      <div class="k">総合</div>
+      <div class="v">{{ result.scores.total }}</div>
+      <div class="small">{{ result.scores.rank }}</div>
+    </div>
+    <div class="box">
+      <div class="k">確信度</div>
+      <div class="v">{{ result.scores.confidence_pct }}%</div>
+      <div class="progress" aria-hidden="true"><div style="width:{{ result.scores.confidence_pct }}%"></div></div>
+      <div class="small">動画/写真/測尺が揃うほど上がります</div>
+    </div>
+    <div class="box">
+      <div class="k">芝寄り度 (断定しない)</div>
+      <div class="v">{{ (result.scores.turfiness*100)|round(0) }}%</div>
+      <div class="small">Speed寄り度の簡易指標（v2.0で精緻化）</div>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+  <h2>項目別（厳しめ）</h2>
+  <table class="table">
+    <tr><th>項目</th><th>値</th><th>言葉</th></tr>
+    <tr><td>スピード</td><td>{{ result.scores.speed }}</td><td>{{ result.scores.rank }}</td></tr>
+    <tr><td>スタミナ</td><td>{{ result.scores.stamina }}</td><td>距離 {{ payload.distance_m or "?" }}m の想定を含む</td></tr>
+    <tr><td>パワー</td><td>{{ result.scores.power }}</td><td>馬体重/推進力の簡易</td></tr>
+    <tr><td>耐久</td><td>{{ result.scores.durability }}</td><td>管囲/胸囲の簡易</td></tr>
+    <tr><td>リスク</td><td>{{ result.scores.risk }}</td><td>高いほどリスク（脚元・ムラ）</td></tr>
+  </table>
+
+  <div class="hr"></div>
+  <h2>参考：市場推定</h2>
+  {% if result.market.market_avg and result.market.market_avg.man %}
+  <div class="small">市場価格平均値（入力）: {{ result.market.market_avg.man|round(0) }}万円</div>
+  {% endif %}
+  <div class="small">推定レンジ: 約 {{ (result.market.yen_low/10000)|round(0) }} 〜 {{ (result.market.yen_high/10000)|round(0) }}万円</div>
+  <div class="small">ブラックタイプ / 近親GSW は「数値 or URL」入力（v2.0でURL自動抽出に対応予定）</div>
+
+  <div class="hr"></div>
+  <div class="grid">
+    <div>
+      <h2>入力写真</h2>
+      {% if result.inputs_used.has_side_photo %}
+        <img class="preview" src="{{ url_for('static', filename=payload._side_rel.replace('static/','')) }}" alt="side">
+      {% else %}
+        <div class="small">未添付</div>
+      {% endif %}
+    </div>
+    <div>
+      <h2>成長予測（擬似）</h2>
+      {% if result.predicted_3yo_rel %}
+        <img class="preview" src="{{ url_for('static', filename=result.predicted_3yo_rel.replace('static/','')) }}" alt="pred">
+      {% else %}
+        <div class="small">生成できませんでした（写真未添付/読み込み失敗など）</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="hr"></div>
+  <a class="btn" href="{{ url_for('index') }}">← もう一度</a>
+</div>
+{% endblock %}
