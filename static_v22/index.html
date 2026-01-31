@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Auction / Race AI Analyzer v2.2</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif; margin: 0; background: #f6f7fb; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 18px; }
+    .card { background: #fff; border-radius: 14px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 900px){ .row,.row3{ grid-template-columns: 1fr; } }
+    label { font-size: 12px; color: #555; display:block; margin: 10px 0 6px; }
+    input, textarea, select { width: 100%; border: 1px solid #d9dce7; border-radius: 10px; padding: 10px 12px; font-size: 14px; background: #fff; }
+    textarea { min-height: 110px; resize: vertical; }
+    .topbar { display:flex; justify-content: space-between; align-items:center; gap: 12px; margin-bottom: 14px; }
+    .title { font-size: 18px; font-weight: 900; }
+    .pill { background: #eef1ff; color: #2b3cff; border-radius: 999px; padding: 6px 10px; font-size: 12px; }
+    .btn { cursor:pointer; border: 0; border-radius: 12px; padding: 12px 14px; font-size: 14px; font-weight: 900; }
+    .btn-primary { background: #2b3cff; color: #fff; }
+    .btn-ghost { background: #eef1ff; color: #2b3cff; }
+    .btn-warn { background: #ffefef; color: #cc2a2a; }
+    .out { white-space: pre-wrap; background: #0b1020; color: #e7ecff; border-radius: 14px; padding: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.45; }
+    .muted { color:#666; font-size:12px; }
+    .hr { height:1px; background:#e7e9f3; margin:14px 0; }
+    .mode { display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
+    .mode button { padding: 8px 10px; border-radius: 999px; border: 1px solid #d9dce7; background: #fff; font-weight: 900; }
+    .mode button.active { background:#2b3cff; color:#fff; border-color:#2b3cff; }
+
+    .kpi { display:flex; gap:10px; flex-wrap: wrap; margin-top: 10px; }
+    .kpi .box { background:#f6f7fb; border:1px solid #e7e9f3; border-radius:12px; padding:10px 12px; min-width: 190px; }
+    .kpi .label { font-size:12px; color:#555; }
+    .kpi .value { font-size:18px; font-weight:900; margin-top:4px; }
+
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 900px){ .grid2{ grid-template-columns: 1fr; } }
+
+    .sectionTitle { font-size: 14px; font-weight: 900; margin-top: 4px; }
+    .list { background:#f6f7fb; border:1px solid #e7e9f3; border-radius: 12px; padding: 10px 12px; }
+    .list ul { margin: 8px 0 0 18px; }
+    .rankRow { display:flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px dashed #e7e9f3; }
+    .rankRow:last-child{ border-bottom:none; }
+    .badge { font-weight:900; }
+    .preview { display:flex; gap:12px; flex-wrap: wrap; margin-top: 8px; }
+    .thumb { width: 160px; height: 120px; object-fit: cover; border-radius: 12px; border: 1px solid #e7e9f3; background:#fff; }
+
+    details { background:#fff; border:1px solid #e7e9f3; border-radius:12px; padding:10px 12px; }
+    summary { cursor:pointer; font-weight:900; }
+    .mini { font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <div class="title">v2.2｜URL中心（オークション含む）→ 自動抽出 → 解析返答</div>
+        <div class="muted">まずURLだけ貼る→「URLから自動入力」→不足だけ追記→「解析して返す」</div>
+      </div>
+      <div class="pill" id="statusPill">Ready</div>
+    </div>
+
+    <div class="card">
+      <div class="mode">
+        <span class="muted">モード:</span>
+        <button id="modeAuction" class="active" type="button">オークション用</button>
+        <button id="modeRace" type="button">レース用</button>
+
+        <span class="muted" style="margin-left:8px;">評価軸:</span>
+        <button id="axisWin" type="button">勝ち上がり</button>
+        <button id="axisEarn" class="active" type="button">稼ぐ</button>
+        <button id="axisBreed" type="button">繁殖</button>
+      </div>
+
+      <label>URL（馬の戦績/血統/出馬表/オークションページ など。複数OK）</label>
+      <textarea id="horse_url" placeholder="例）&#10;https://db.netkeiba.com/horse/result/...&#10;https://www.jbis.or.jp/horse/.../record/&#10;https://auction.keiba.rakuten.co.jp/top/&#10;https://www.keiba.go.jp/KeibaWeb/TodayRaceInfo/DebaTable?..."></textarea>
+
+      <div class="row" style="align-items:end;">
+        <button id="btnExtract" class="btn btn-ghost" type="button">URLから自動入力</button>
+        <div class="muted">抽出できた範囲だけ入ります（ブロック/JSサイトは一部だけ）。</div>
+      </div>
+
+      <details style="margin-top:12px;">
+        <summary>不足だけ追記（必要な時だけ開く）</summary>
+
+        <div class="row3">
+          <div><label>馬名</label><input id="horse_name" /></div>
+          <div><label>年齢</label><input id="age" type="number" min="2" max="20" /></div>
+          <div>
+            <label>性別</label>
+            <select id="sex">
+              <option value="">（未指定）</option>
+              <option value="牡">牡</option>
+              <option value="牝">牝</option>
+              <option value="セン">セン</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row3">
+          <div><label>父</label><input id="sire" /></div>
+          <div><label>母</label><input id="dam" /></div>
+          <div><label>母父</label><input id="dam_sire" /></div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>制約（予算・期間・リスク許容）</label>
+            <input id="constraints" placeholder="例）上限300万、半年で回収目線、リスク中" />
+            <label>予算上限（万円、任意）</label>
+            <input id="max_budget_man" type="number" step="0.1" placeholder="例）300" />
+          </div>
+          <div>
+            <label>想定競馬場/地域（任意）</label>
+            <textarea id="target_tracks" placeholder="例）南関→佐賀も検討"></textarea>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>オークション情報 / 募集文（URL抽出されます。必要なら追記）</label>
+            <textarea id="auction_context"></textarea>
+          </div>
+          <div>
+            <label>過去走（URL抽出されます。必要なら追記）</label>
+            <textarea id="past_performance_text"></textarea>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>歩様/動画メモ（任意）</label>
+            <textarea id="gait_notes"></textarea>
+          </div>
+          <div>
+            <label>写真（任意）</label>
+            <input id="photo" type="file" accept="image/*" />
+            <div class="preview" id="photoPrev"></div>
+            <label style="margin-top:10px;">動画（任意）</label>
+            <input id="video" type="file" accept="video/*" />
+            <div class="muted mini">サーバにffmpegがある場合だけフレーム抽出します。</div>
+          </div>
+        </div>
+      </details>
+
+      <div class="row" style="align-items:end; margin-top:12px;">
+        <div style="display:flex; gap:10px;">
+          <button id="btnAnalyze" class="btn btn-primary" type="button" style="width:100%;">解析して返す</button>
+          <button id="btnClear" class="btn btn-warn" type="button" style="width:100%;">クリア</button>
+        </div>
+        <div class="muted">結果はJSONで返り、下に整理して表示します。</div>
+      </div>
+
+      <div class="hr"></div>
+      <div class="muted mini" id="extractReport"></div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="card">
+      <div class="sectionTitle">結果サマリー</div>
+      <div class="kpi" id="kpi"></div>
+
+      <div class="hr"></div>
+
+      <div class="grid2">
+        <div class="list">
+          <div class="sectionTitle">条件（必ず2つずつ）</div>
+          <div class="muted">BUYでも “買う条件”と“見送る条件”が出ます。</div>
+          <div class="hr"></div>
+          <div><span class="badge">買う条件</span><ul id="buyConds"></ul></div>
+          <div style="margin-top:10px;"><span class="badge">見送る条件</span><ul id="passConds"></ul></div>
+        </div>
+        <div class="list">
+          <div class="sectionTitle">適性競馬場ランキング（テンプレ）</div>
+          <div class="muted">南関/高知/佐賀/岩手/兵庫/笠松 を優先して順位化。</div>
+          <div class="hr"></div>
+          <div id="trackRanking"></div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+      <div class="sectionTitle">JSON（生データ）</div>
+      <div class="out" id="out">（まだ解析していません）</div>
+    </div>
+  </div>
+
+<script>
+  const statusPill = document.getElementById("statusPill");
+  const out = document.getElementById("out");
+  const kpi = document.getElementById("kpi");
+  const buyConds = document.getElementById("buyConds");
+  const passConds = document.getElementById("passConds");
+  const trackRanking = document.getElementById("trackRanking");
+  const extractReport = document.getElementById("extractReport");
+
+  let mode = "auction";
+  let axis = "稼ぐ";
+
+  const btnAuction = document.getElementById("modeAuction");
+  const btnRace = document.getElementById("modeRace");
+  const axisWin = document.getElementById("axisWin");
+  const axisEarn = document.getElementById("axisEarn");
+  const axisBreed = document.getElementById("axisBreed");
+
+  function setMode(m){
+    mode = m;
+    btnAuction.classList.toggle("active", m==="auction");
+    btnRace.classList.toggle("active", m==="race");
+  }
+  function setAxis(a){
+    axis = a;
+    axisWin.classList.toggle("active", a==="勝ち上がり");
+    axisEarn.classList.toggle("active", a==="稼ぐ");
+    axisBreed.classList.toggle("active", a==="繁殖");
+  }
+  btnAuction.addEventListener("click", ()=>setMode("auction"));
+  btnRace.addEventListener("click", ()=>setMode("race"));
+  axisWin.addEventListener("click", ()=>setAxis("勝ち上がり"));
+  axisEarn.addEventListener("click", ()=>setAxis("稼ぐ"));
+  axisBreed.addEventListener("click", ()=>setAxis("繁殖"));
+
+  function v(id){ return document.getElementById(id).value; }
+  function setStatus(t){ statusPill.textContent = t; }
+
+  function box(label, value){
+    return `
+      <div class="box">
+        <div class="label">${label}</div>
+        <div class="value">${value ?? ""}</div>
+      </div>
+    `;
+  }
+
+  function renderKPI(obj){
+    const parts = [];
+    parts.push(box("判断", obj.buy_decision));
+    parts.push(box("confidence", obj.decision_confidence!=null ? Math.round(obj.decision_confidence*100)+"%" : ""));
+    parts.push(box("評価軸", obj.purpose_axis || axis));
+
+    parts.push(box("理想（万円）", obj.bid_ideal_man ?? ""));
+    parts.push(box("上限（万円）", obj.bid_max_man ?? ""));
+    parts.push(box("見送りライン（万円）", obj.bid_walkaway_man ?? ""));
+
+    if(obj.best_distance) parts.push(box("適性距離", obj.best_distance));
+    if(obj.running_style) parts.push(box("脚質推定", obj.running_style));
+    kpi.innerHTML = parts.join("");
+  }
+
+  function renderConds(listEl, arr){
+    listEl.innerHTML = "";
+    (arr || []).slice(0,2).forEach(s=>{
+      const li = document.createElement("li");
+      li.textContent = s;
+      listEl.appendChild(li);
+    });
+  }
+
+  function renderRanking(arr){
+    trackRanking.innerHTML = "";
+    (arr || []).forEach((r, idx)=>{
+      const pct = r.fit_score!=null ? Math.round(r.fit_score*100) : "";
+      const div = document.createElement("div");
+      div.className = "rankRow";
+      div.innerHTML = `<div><span class="badge">#${idx+1} ${r.track}</span>　<span class="muted">${r.reason||""}</span></div><div class="badge">${pct}%</div>`;
+      trackRanking.appendChild(div);
+    });
+  }
+
+  function previewPhoto(file){
+    const prev = document.getElementById("photoPrev");
+    prev.innerHTML = "";
+    if(!file) return;
+    const img = document.createElement("img");
+    img.className = "thumb";
+    img.src = URL.createObjectURL(file);
+    prev.appendChild(img);
+  }
+  document.getElementById("photo").addEventListener("change", (e)=>{
+    previewPhoto(e.target.files && e.target.files[0]);
+  });
+
+  async function postForm(url, fd){
+    const res = await fetch(url, { method:"POST", body: fd });
+    const raw = await res.text();
+    let j;
+    try { j = JSON.parse(raw); } catch { j = { detail: raw }; }
+    if (!res.ok) throw new Error(j.detail || raw);
+    if (!j.ok) throw new Error(j.detail || raw);
+    return j;
+  }
+
+  async function extract(){
+    setStatus("Extracting...");
+    extractReport.textContent = "";
+    const fd = new FormData();
+    fd.append("urls", v("horse_url"));
+    try{
+      const j = await postForm("/api/extract", fd);
+      const d = j.data || {};
+
+      // auto-fill
+      const map = {
+        horse_name: d.horse_name,
+        auction_context: d.auction_context,
+        past_performance_text: d.past_performance_text
+      };
+      for(const k in map){
+        if(map[k] != null && map[k] !== "") document.getElementById(k).value = map[k];
+      }
+
+      // show report
+      const srcs = (d.sources || []).map(s=> `${s.source||"?"}: ${s.url}${s.error?(" / "+s.error):""}`);
+      extractReport.textContent = "抽出元: " + (srcs.join(" | ") || "なし");
+      setStatus("Ready");
+    }catch(e){
+      extractReport.textContent = "抽出Error: " + (e?.message || JSON.stringify(e));
+      setStatus("Error");
+    }
+  }
+
+  async function analyze(){
+    setStatus("Analyzing...");
+    out.textContent = "解析中...";
+    kpi.innerHTML = "";
+    buyConds.innerHTML = "";
+    passConds.innerHTML = "";
+    trackRanking.innerHTML = "";
+
+    const fd = new FormData();
+    fd.append("mode", mode);
+    fd.append("purpose_axis", axis);
+
+    fd.append("horse_url", v("horse_url"));
+    fd.append("horse_name", v("horse_name"));
+    if (v("age")) fd.append("age", String(parseInt(v("age"), 10)));
+    fd.append("sex", v("sex"));
+    fd.append("sire", v("sire"));
+    fd.append("dam", v("dam"));
+    fd.append("dam_sire", v("dam_sire"));
+
+    fd.append("constraints", v("constraints"));
+    if (v("max_budget_man")) fd.append("max_budget_man", String(parseFloat(v("max_budget_man"))));
+    fd.append("auction_context", v("auction_context"));
+    fd.append("past_performance_text", v("past_performance_text"));
+    fd.append("gait_notes", v("gait_notes"));
+    fd.append("target_tracks", v("target_tracks"));
+
+    const photo = document.getElementById("photo").files[0];
+    const video = document.getElementById("video").files[0];
+    if(photo) fd.append("photo", photo);
+    if(video) fd.append("video", video);
+
+    try{
+      const j = await postForm("/api/analyze", fd);
+      const obj = JSON.parse(j.data);
+      renderKPI(obj);
+      renderConds(buyConds, obj.buy_conditions);
+      renderConds(passConds, obj.pass_conditions);
+      renderRanking(obj.track_ranking);
+      out.textContent = JSON.stringify(obj, null, 2);
+      setStatus("Done");
+    }catch(e){
+      out.textContent = "Error: " + (e?.message || JSON.stringify(e));
+      setStatus("Error");
+    }
+  }
+
+  document.getElementById("btnExtract").addEventListener("click", extract);
+  document.getElementById("btnAnalyze").addEventListener("click", analyze);
+  document.getElementById("btnClear").addEventListener("click", ()=>{
+    ["horse_url","horse_name","age","sex","sire","dam","dam_sire","constraints","max_budget_man","auction_context","past_performance_text","gait_notes","target_tracks"].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el.tagName==="SELECT") el.value="";
+      else el.value="";
+    });
+    document.getElementById("photo").value = "";
+    document.getElementById("video").value = "";
+    document.getElementById("photoPrev").innerHTML = "";
+    extractReport.textContent = "";
+    kpi.innerHTML = "";
+    buyConds.innerHTML = "";
+    passConds.innerHTML = "";
+    trackRanking.innerHTML = "";
+    out.textContent = "（まだ解析していません）";
+    setStatus("Ready");
+    setMode("auction");
+    setAxis("稼ぐ");
+  });
+</script>
+</body>
+</html>
